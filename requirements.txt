@@ -1,0 +1,13 @@
+flask
+langchain
+langchain-community
+langchain-huggingface
+langchain-groq
+langchain-text-splitters
+sentence-transformers
+faiss-cpu
+pypdf
+python-dotenv
+pymongo
+flask-login
+bcrypt
