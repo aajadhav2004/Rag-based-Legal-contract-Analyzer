@@ -1,6 +1,6 @@
 # RAG Based Legal Contract Analyzer
 
-![RAG Based Legal Contract Analyzer](https://raw.githubusercontent.com/aajadhav2004/legal-ai-analyzer/main/project-screenshot.png)
+![RAG Based Legal Contract Analyzer](https://raw.githubusercontent.com/aajadhav2004/Rag-based-Legal-contract-Analyzer/main/home.png)
 
 ## 🚀 Overview
 
@@ -82,8 +82,8 @@ A production-grade AI-powered legal contract analysis system built with RAG (Ret
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/aajadhav2004/legal-ai-analyzer.git
-cd legal-ai-analyzer
+git clone https://github.com/aajadhav2004/Rag-based-Legal-contract-Analyzer.git
+cd Rag-based-Legal-contract-Analyzer
 ```
 
 2. **Create virtual environment**
@@ -126,7 +126,7 @@ http://localhost:5000
 ## 📁 Project Structure
 
 ```
-legal-ai-analyzer/
+Rag-based-Legal-contract-Analyzer/
 ├── app.py                 # Main Flask application
 ├── auth.py               # Authentication logic
 ├── config.py             # Configuration settings
