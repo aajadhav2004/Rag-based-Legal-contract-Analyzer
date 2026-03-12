@@ -49,12 +49,13 @@ Fill in the following settings:
 
 Click "Advanced" and add these environment variables:
 
-| Key              | Value                          | Notes                           |
-| ---------------- | ------------------------------ | ------------------------------- |
-| `GROQ_API_KEY`   | Your Groq API key              | Get from groq.com               |
-| `MONGODB_URI`    | Your MongoDB connection string | From MongoDB Atlas              |
-| `SECRET_KEY`     | Random secret string           | Generate a secure random string |
-| `PYTHON_VERSION` | `3.10.0`                       | Python version                  |
+| Key              | Value                          | Notes                                         |
+| ---------------- | ------------------------------ | --------------------------------------------- |
+| `GROQ_API_KEY`   | Your Groq API key              | Get from groq.com                             |
+| `HF_TOKEN`       | Your HuggingFace token         | Optional, from huggingface.co/settings/tokens |
+| `MONGODB_URI`    | Your MongoDB connection string | From MongoDB Atlas                            |
+| `SECRET_KEY`     | Random secret string           | Generate a secure random string               |
+| `PYTHON_VERSION` | `3.10.0`                       | Python version                                |
 
 **How to generate SECRET_KEY:**
 
