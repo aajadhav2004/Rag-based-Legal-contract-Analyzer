@@ -31,6 +31,7 @@ Termination Conditions: [how contract can be terminated]
 Jurisdiction: [governing law/location]
 Key Obligations: [main obligations of parties]
 
+IMPORTANT: Do NOT use asterisks (*) or any markdown formatting. Use plain text only.
 Be precise and extract ONLY information explicitly stated in the contract.
 """
     return generate(prompt)
@@ -38,14 +39,14 @@ Be precise and extract ONLY information explicitly stated in the contract.
 
 # Clause Extraction with Page Numbers
 def extract_clauses(docs):
-    """Extract clauses with page numbers and source text"""
+    """Extract key clauses with concise summaries"""
     clauses_list = []
     
     for doc in docs[:10]:  # Analyze first 10 pages for clauses
         page_num = doc.metadata.get('page', 'Unknown')
         text = doc.page_content
         
-        prompt = f"""Extract important legal clauses from this contract page.
+        prompt = f"""Extract important legal clauses from this contract page and provide CONCISE summaries.
 
 Page {page_num} Text:
 {text}
@@ -53,9 +54,11 @@ Page {page_num} Text:
 For each clause found, return in this EXACT format:
 CLAUSE_TYPE: [Termination/Payment/Confidentiality/Liability/Indemnification/Other]
 PAGE: {page_num}
-TEXT: [exact relevant paragraph]
+SUMMARY: [1-2 sentence concise summary of what this clause means]
 ---
 
+IMPORTANT: Do NOT use asterisks (*) or any markdown formatting. Use plain text only.
+DO NOT include the full text. Only provide brief, actionable summaries.
 Only extract clauses that are clearly present. If no significant clauses on this page, return "No major clauses found."
 """
         
@@ -68,14 +71,14 @@ Only extract clauses that are clearly present. If no significant clauses on this
 
 # Risk Detection with Severity and Page Numbers
 def detect_risks(docs):
-    """Detect risks with severity levels and page references"""
+    """Detect risks with severity levels and concise descriptions"""
     risks_list = []
     
     for doc in docs[:15]:  # Analyze first 15 pages for risks
         page_num = doc.metadata.get('page', 'Unknown')
         text = doc.page_content
         
-        prompt = f"""Analyze this contract page for potential legal risks.
+        prompt = f"""Analyze this contract page for potential legal risks and provide CONCISE insights.
 
 Page {page_num} Text:
 {text}
@@ -84,10 +87,11 @@ For each risk found, return in this EXACT format:
 RISK_TYPE: [Unlimited Liability/Termination Penalties/Indemnification/Payment Penalties/One-sided Obligations/Other]
 SEVERITY: [Low/Medium/High]
 PAGE: {page_num}
-DESCRIPTION: [brief explanation of the risk]
-TEXT: [exact relevant paragraph from contract]
+INSIGHT: [1-2 sentence concise explanation of why this is risky and what it means]
 ---
 
+IMPORTANT: Do NOT use asterisks (*) or any markdown formatting. Use plain text only.
+DO NOT include the full contract text. Only provide brief, actionable insights.
 Only identify REAL risks. If no significant risks on this page, return "No major risks found."
 """
         

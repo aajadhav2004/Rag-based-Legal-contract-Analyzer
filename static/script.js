@@ -12,6 +12,11 @@ let isUploading = false;
 let hasDocument = false;
 let currentFilename = null;
 
+// Load saved data on page load
+window.addEventListener('DOMContentLoaded', () => {
+    loadSavedData();
+});
+
 // File selection
 fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -59,6 +64,10 @@ uploadBtn.addEventListener('click', async () => {
     isUploading = true;
     hasDocument = false;
     
+    // Clear previous data from localStorage
+    localStorage.removeItem('contractAnalysis');
+    localStorage.removeItem('chatHistory');
+    
     // Hide previous results
     resultsSection.style.display = 'none';
     qaSection.style.display = 'none';
@@ -93,6 +102,9 @@ uploadBtn.addEventListener('click', async () => {
                 // Hide progress, show results
                 progressContainer.style.display = 'none';
                 uploadBtn.style.display = 'inline-block';
+                
+                // Save to localStorage
+                saveAnalysisData(data);
                 
                 // Display results
                 displayResults(data);
@@ -260,6 +272,9 @@ async function askQuestion() {
             
             chatContainer.appendChild(answerContainer);
             chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Save chat to localStorage
+            saveChatMessage(question, data.answer, data.sources);
         } else {
             showError(data.error || 'Failed to get answer');
         }
@@ -348,3 +363,71 @@ gradient.innerHTML = `
 `;
 defs.appendChild(gradient);
 svg.appendChild(defs);
+
+// LocalStorage functions
+function saveAnalysisData(data) {
+    const analysisData = {
+        summary: data.summary,
+        clauses: data.clauses,
+        risks: data.risks,
+        risk_score: data.risk_score,
+        filename: data.filename,
+        timestamp: new Date().toISOString()
+    };
+    localStorage.setItem('contractAnalysis', JSON.stringify(analysisData));
+}
+
+function saveChatMessage(question, answer, sources) {
+    let chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+    chatHistory.push({
+        question: question,
+        answer: answer,
+        sources: sources,
+        timestamp: new Date().toISOString()
+    });
+    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+}
+
+function loadSavedData() {
+    const savedAnalysis = localStorage.getItem('contractAnalysis');
+    const savedChat = localStorage.getItem('chatHistory');
+    
+    if (savedAnalysis) {
+        const data = JSON.parse(savedAnalysis);
+        hasDocument = true;
+        currentFilename = data.filename;
+        
+        // Display saved analysis
+        displayResults(data);
+        
+        // Show Q&A section
+        qaSection.style.display = 'block';
+        
+        // Load chat history
+        if (savedChat) {
+            const chatHistory = JSON.parse(savedChat);
+            chatHistory.forEach(chat => {
+                // Display question
+                addMessage(chat.question, 'question');
+                
+                // Display answer with sources
+                const answerContainer = document.createElement('div');
+                answerContainer.className = 'answer-container';
+                
+                const answerDiv = document.createElement('div');
+                answerDiv.className = 'message answer';
+                answerDiv.textContent = chat.answer;
+                answerContainer.appendChild(answerDiv);
+                
+                if (chat.sources && chat.sources.length > 0) {
+                    const sourcesDropdown = createSourcesDropdown(chat.sources);
+                    answerContainer.appendChild(sourcesDropdown);
+                }
+                
+                chatContainer.appendChild(answerContainer);
+            });
+            
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    }
+}
