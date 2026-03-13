@@ -2,11 +2,11 @@ services:
   - type: web
     name: legal-contract-analyzer
     env: python
-    buildCommand: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app -c gunicorn.conf.py
     envVars:
       - key: PYTHON_VERSION
-        value: 3.10.0
+        value: 3.10.13
       - key: GROQ_API_KEY
         sync: false
       - key: HF_TOKEN
