@@ -4,7 +4,8 @@ from config import GROQ_API_KEY
 llm = ChatGroq(
     groq_api_key=GROQ_API_KEY,
     model="llama-3.1-8b-instant",
-    temperature=0  # Lower temperature for more consistent, factual responses
+    temperature=0 , # Lower temperature for more consistent, factual responses
+    max_tokens=500 
 )
 
 
