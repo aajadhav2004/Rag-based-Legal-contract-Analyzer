@@ -1,14 +1,35 @@
+# flask
+# gunicorn
+# langchain
+# langchain-community
+# langchain-groq
+# langchain-text-splitters
+# langchain-huggingface
+# sentence-transformers
+# faiss-cpu
+# pypdf
+# python-dotenv
+# pymongo
+# flask-login
+# bcrypt  
+
 flask
 gunicorn
+flask-login
+bcrypt
+python-dotenv
+
+pymongo
+
 langchain
 langchain-community
 langchain-groq
-langchain-text-splitters
 langchain-huggingface
+langchain-text-splitters
+
 sentence-transformers
 faiss-cpu
 pypdf
-python-dotenv
-pymongo
-flask-login
-bcrypt
+
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.2.2+cpu
