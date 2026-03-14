@@ -34,28 +34,38 @@ os.makedirs(VECTOR_DB_PATH, exist_ok=True)
 
 
 def cleanup_old_files():
-    """Clean up old uploaded files and vector database files"""
+    """IMMEDIATELY clean up ALL old uploaded files and vector database files"""
     try:
-        # Clean uploads folder
+        print("🧹 Starting immediate cleanup...")
+        
+        # Clean uploads folder - DELETE ALL FILES
         if os.path.exists(UPLOAD_FOLDER):
+            files_deleted = 0
             for file in glob.glob(os.path.join(UPLOAD_FOLDER, "*")):
                 try:
-                    os.remove(file)
-                    print(f"Deleted old upload: {file}")
+                    if os.path.isfile(file):
+                        os.remove(file)
+                        files_deleted += 1
+                        print(f"🗑️ Deleted old upload: {os.path.basename(file)}")
                 except Exception as e:
-                    print(f"Error deleting {file}: {e}")
+                    print(f"❌ Error deleting {file}: {e}")
+            print(f"✅ Deleted {files_deleted} old upload files")
         
-        # Clean vector database folder
+        # Clean vector database folder - DELETE ALL FILES
         if os.path.exists(VECTOR_DB_PATH):
+            files_deleted = 0
             for file in glob.glob(os.path.join(VECTOR_DB_PATH, "*")):
                 try:
-                    os.remove(file)
-                    print(f"Deleted old vector db: {file}")
+                    if os.path.isfile(file):
+                        os.remove(file)
+                        files_deleted += 1
+                        print(f"🗑️ Deleted old vector db: {os.path.basename(file)}")
                 except Exception as e:
-                    print(f"Error deleting {file}: {e}")
+                    print(f"❌ Error deleting {file}: {e}")
+            print(f"✅ Deleted {files_deleted} old vector db files")
                     
     except Exception as e:
-        print(f"Cleanup error: {e}")
+        print(f"❌ Cleanup error: {e}")
 
 
 def cleanup_temp_files():
@@ -181,10 +191,12 @@ def upload():
     global vector_db, is_uploading, current_filename
 
     try:
-        is_uploading = True
-        
-        # Clean up old files before uploading new one
+        # IMMEDIATELY clean up old files as soon as upload starts
+        print("🧹 Cleaning old files immediately...")
         cleanup_old_files()
+        print("✅ Old files cleaned!")
+        
+        is_uploading = True
         
         file = request.files["file"]
 
@@ -192,20 +204,27 @@ def upload():
             is_uploading = False
             return jsonify({"error": "No file selected"}), 400
 
-        # Save file
+        # Save new file
         filename = file.filename
         current_filename = filename
         path = os.path.join(UPLOAD_FOLDER, filename)
+        
+        print(f"💾 Saving new file: {filename}")
         file.save(path)
+        print(f"✅ File saved: {path}")
 
         # Load and process PDF
+        print("📄 Processing PDF...")
         docs = load_pdf(path)
         chunks = split_docs(docs)
 
-        # Create new vector database (old one is automatically replaced)
+        # Create new vector database (this will replace old one)
+        print("🔍 Creating vector database...")
         vector_db = create_vector_db(chunks, embeddings)
+        print("✅ Vector database created!")
 
         # Generate structured analysis
+        print("🤖 Analyzing contract...")
         # Pass first 10 pages for summary
         full_text = " ".join([d.page_content for d in docs[:10]])[:5000]
         summary = summarize_contract(full_text)
@@ -218,6 +237,7 @@ def upload():
         risk_score = calculate_risk_score(risks)
 
         is_uploading = False
+        print("🎉 Analysis complete!")
 
         return jsonify({
             "summary": summary,
@@ -230,7 +250,7 @@ def upload():
     
     except Exception as e:
         is_uploading = False
-        print(f"Upload error: {e}")
+        print(f"❌ Upload error: {e}")
         return jsonify({"error": str(e)}), 500
 
 
