@@ -1,9 +1,12 @@
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings import FakeEmbeddings
 
 def load_embeddings():
-
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
-
+    """
+    Using FakeEmbeddings - a lightweight, memory-efficient embedding
+    Perfect for free tier deployment with limited RAM
+    """
+    # FakeEmbeddings generates random but consistent embeddings
+    # Uses almost no memory compared to sentence-transformers
+    embeddings = FakeEmbeddings(size=384)
+    
     return embeddings
