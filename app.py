@@ -39,30 +39,38 @@ def cleanup_old_files():
         print("🧹 Starting immediate cleanup...")
         
         # Clean uploads folder - DELETE ALL FILES
-        if os.path.exists(UPLOAD_FOLDER):
+        upload_path = os.path.abspath(UPLOAD_FOLDER)
+        if os.path.exists(upload_path):
             files_deleted = 0
-            for file in glob.glob(os.path.join(UPLOAD_FOLDER, "*")):
+            for filename in os.listdir(upload_path):
+                file_path = os.path.join(upload_path, filename)
                 try:
-                    if os.path.isfile(file):
-                        os.remove(file)
+                    if os.path.isfile(file_path):
+                        os.remove(file_path)
                         files_deleted += 1
-                        print(f"🗑️ Deleted old upload: {os.path.basename(file)}")
+                        print(f"🗑️ Deleted old upload: {filename}")
                 except Exception as e:
-                    print(f"❌ Error deleting {file}: {e}")
+                    print(f"❌ Error deleting {filename}: {e}")
             print(f"✅ Deleted {files_deleted} old upload files")
+        else:
+            print(f"📁 Upload folder not found: {upload_path}")
         
         # Clean vector database folder - DELETE ALL FILES
-        if os.path.exists(VECTOR_DB_PATH):
+        vector_path = os.path.abspath(VECTOR_DB_PATH)
+        if os.path.exists(vector_path):
             files_deleted = 0
-            for file in glob.glob(os.path.join(VECTOR_DB_PATH, "*")):
+            for filename in os.listdir(vector_path):
+                file_path = os.path.join(vector_path, filename)
                 try:
-                    if os.path.isfile(file):
-                        os.remove(file)
+                    if os.path.isfile(file_path):
+                        os.remove(file_path)
                         files_deleted += 1
-                        print(f"🗑️ Deleted old vector db: {os.path.basename(file)}")
+                        print(f"🗑️ Deleted old vector db: {filename}")
                 except Exception as e:
-                    print(f"❌ Error deleting {file}: {e}")
+                    print(f"❌ Error deleting {filename}: {e}")
             print(f"✅ Deleted {files_deleted} old vector db files")
+        else:
+            print(f"📁 Vector DB folder not found: {vector_path}")
                     
     except Exception as e:
         print(f"❌ Cleanup error: {e}")
@@ -178,8 +186,20 @@ def logout():
 def manual_cleanup():
     """Manual cleanup endpoint"""
     try:
-        cleanup_temp_files()
+        cleanup_old_files()
         return jsonify({"success": True, "message": "Cleanup completed"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/test-cleanup", methods=["GET"])
+@login_required
+def test_cleanup():
+    """Test cleanup function"""
+    try:
+        print("🧪 Testing cleanup function...")
+        cleanup_old_files()
+        return jsonify({"success": True, "message": "Test cleanup completed - check console logs"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -191,10 +211,34 @@ def upload():
     global vector_db, is_uploading, current_filename
 
     try:
-        # IMMEDIATELY clean up old files as soon as upload starts
-        print("🧹 Cleaning old files immediately...")
-        cleanup_old_files()
-        print("✅ Old files cleaned!")
+        # STEP 1: JAISE HI BUTTON CLICK HOGA - PEHLE OLD FILES DELETE KARO
+        print("🗑️ Button clicked! Deleting old files...")
+        
+        # uploads folder ki saari files delete karo
+        uploads_folder = "uploads"
+        if os.path.exists(uploads_folder):
+            for file_name in os.listdir(uploads_folder):
+                file_path = os.path.join(uploads_folder, file_name)
+                if os.path.isfile(file_path):
+                    try:
+                        os.remove(file_path)
+                        print(f"✅ Deleted: {file_name}")
+                    except Exception as e:
+                        print(f"❌ Could not delete {file_name}: {e}")
+        
+        # vectordb folder ki saari files delete karo
+        vectordb_folder = "vectordb"
+        if os.path.exists(vectordb_folder):
+            for file_name in os.listdir(vectordb_folder):
+                file_path = os.path.join(vectordb_folder, file_name)
+                if os.path.isfile(file_path):
+                    try:
+                        os.remove(file_path)
+                        print(f"✅ Deleted vector file: {file_name}")
+                    except Exception as e:
+                        print(f"❌ Could not delete vector file {file_name}: {e}")
+        
+        print("🎉 All old files deleted! Now processing new file...")
         
         is_uploading = True
         
@@ -204,40 +248,29 @@ def upload():
             is_uploading = False
             return jsonify({"error": "No file selected"}), 400
 
-        # Save new file
+        # Ab naya file save karo
         filename = file.filename
         current_filename = filename
         path = os.path.join(UPLOAD_FOLDER, filename)
         
         print(f"💾 Saving new file: {filename}")
         file.save(path)
-        print(f"✅ File saved: {path}")
 
-        # Load and process PDF
-        print("📄 Processing PDF...")
+        # Process PDF
         docs = load_pdf(path)
         chunks = split_docs(docs)
 
-        # Create new vector database (this will replace old one)
-        print("🔍 Creating vector database...")
+        # Create vector database
         vector_db = create_vector_db(chunks, embeddings)
-        print("✅ Vector database created!")
 
-        # Generate structured analysis
-        print("🤖 Analyzing contract...")
-        # Pass first 10 pages for summary
+        # Analysis
         full_text = " ".join([d.page_content for d in docs[:10]])[:5000]
         summary = summarize_contract(full_text)
-
-        # Pass document chunks for clause and risk extraction
         clauses = extract_clauses(docs)
         risks = detect_risks(docs)
-        
-        # Calculate risk score
         risk_score = calculate_risk_score(risks)
 
         is_uploading = False
-        print("🎉 Analysis complete!")
 
         return jsonify({
             "summary": summary,
@@ -250,7 +283,7 @@ def upload():
     
     except Exception as e:
         is_uploading = False
-        print(f"❌ Upload error: {e}")
+        print(f"❌ Error: {e}")
         return jsonify({"error": str(e)}), 500
 
 
