@@ -1,7 +1,9 @@
 import os
+import shutil
+import glob
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from config import UPLOAD_FOLDER, SECRET_KEY
+from config import UPLOAD_FOLDER, SECRET_KEY, VECTOR_DB_PATH
 from rag.loader import load_pdf
 from rag.chunker import split_docs
 from rag.embeddings import load_embeddings
@@ -28,6 +30,58 @@ is_uploading = False
 current_filename = None
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(VECTOR_DB_PATH, exist_ok=True)
+
+
+def cleanup_old_files():
+    """Clean up old uploaded files and vector database files"""
+    try:
+        # Clean uploads folder
+        if os.path.exists(UPLOAD_FOLDER):
+            for file in glob.glob(os.path.join(UPLOAD_FOLDER, "*")):
+                try:
+                    os.remove(file)
+                    print(f"Deleted old upload: {file}")
+                except Exception as e:
+                    print(f"Error deleting {file}: {e}")
+        
+        # Clean vector database folder
+        if os.path.exists(VECTOR_DB_PATH):
+            for file in glob.glob(os.path.join(VECTOR_DB_PATH, "*")):
+                try:
+                    os.remove(file)
+                    print(f"Deleted old vector db: {file}")
+                except Exception as e:
+                    print(f"Error deleting {file}: {e}")
+                    
+    except Exception as e:
+        print(f"Cleanup error: {e}")
+
+
+def cleanup_temp_files():
+    """Clean up temporary files older than 1 hour"""
+    import time
+    try:
+        current_time = time.time()
+        
+        # Clean old uploads (older than 1 hour)
+        for file_path in glob.glob(os.path.join(UPLOAD_FOLDER, "*")):
+            if os.path.isfile(file_path):
+                file_age = current_time - os.path.getctime(file_path)
+                if file_age > 3600:  # 1 hour = 3600 seconds
+                    os.remove(file_path)
+                    print(f"Cleaned old file: {file_path}")
+                    
+        # Clean old vector db files (older than 1 hour)
+        for file_path in glob.glob(os.path.join(VECTOR_DB_PATH, "*")):
+            if os.path.isfile(file_path):
+                file_age = current_time - os.path.getctime(file_path)
+                if file_age > 3600:  # 1 hour = 3600 seconds
+                    os.remove(file_path)
+                    print(f"Cleaned old vector db: {file_path}")
+                    
+    except Exception as e:
+        print(f"Temp cleanup error: {e}")
 
 
 @app.route("/")
@@ -109,6 +163,17 @@ def logout():
     return redirect(url_for('login'))
 
 
+@app.route("/cleanup", methods=["POST"])
+@login_required
+def manual_cleanup():
+    """Manual cleanup endpoint"""
+    try:
+        cleanup_temp_files()
+        return jsonify({"success": True, "message": "Cleanup completed"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/upload", methods=["POST"])
 @login_required
 def upload():
@@ -117,6 +182,9 @@ def upload():
 
     try:
         is_uploading = True
+        
+        # Clean up old files before uploading new one
+        cleanup_old_files()
         
         file = request.files["file"]
 
@@ -202,5 +270,8 @@ def ask():
 
 
 if __name__ == "__main__":
+    # Clean up old temporary files on startup
+    cleanup_temp_files()
+    
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=False)
