@@ -1,18 +1,4 @@
-# flask
-# gunicorn
-# langchain
-# langchain-community
-# langchain-groq
-# langchain-text-splitters
-# langchain-huggingface
-# sentence-transformers
-# faiss-cpu
-# pypdf
-# python-dotenv
-# pymongo
-# flask-login
-# bcrypt  
-
+# Flask and web dependencies
 flask
 gunicorn
 flask-login
@@ -20,17 +6,17 @@ bcrypt
 python-dotenv
 pymongo
 
+# LangChain and AI dependencies
 langchain==0.2.16
 langchain-community==0.2.16
 langchain-text-splitters==0.2.4
 langchain-groq==0.1.9
 langchain-huggingface
 
-sentence-transformers==2.7.0
-transformers==4.41.2
-
+# Vector database and document processing
 faiss-cpu
 pypdf
 
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.2.2+cpu
+# Note: PDFs stored in MongoDB (cloud storage)
+# Vectors stored in FAISS (in-memory for fast search)
+# Using HuggingFace API for embeddings (no local models downloaded)

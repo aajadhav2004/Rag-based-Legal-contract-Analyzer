@@ -15,14 +15,8 @@ ENV/
 .env
 .env.local
 
-# Uploads folder (user documents)
-uploads/
-*.pdf
-
-# Vector database (generated files)
-vectordb/
-*.faiss
-*.pkl
+# Note: uploads/ and vectordb/ folders no longer needed
+# PDFs stored in MongoDB, vectors in memory (FAISS)
 
 # IDE
 .vscode/

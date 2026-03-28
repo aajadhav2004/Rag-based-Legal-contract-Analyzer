@@ -1,13 +1,11 @@
 import os
-import shutil
-import glob
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from config import UPLOAD_FOLDER, SECRET_KEY, VECTOR_DB_PATH
-from rag.loader import load_pdf
+from config import SECRET_KEY
+from rag.loader import load_pdf_from_bytes
 from rag.chunker import split_docs
 from rag.embeddings import load_embeddings
-from rag.vectordb import create_vector_db, load_vector_db
+from rag.vectordb import create_vector_db, store_pdf
 from rag.analyzer import summarize_contract, extract_clauses, detect_risks, calculate_risk_score
 from rag.qa_system import ask_question
 from auth import User
@@ -28,78 +26,6 @@ embeddings = load_embeddings()
 vector_db = None
 is_uploading = False
 current_filename = None
-
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(VECTOR_DB_PATH, exist_ok=True)
-
-
-def cleanup_old_files():
-    """IMMEDIATELY clean up ALL old uploaded files and vector database files"""
-    try:
-        print("🧹 Starting immediate cleanup...")
-        
-        # Clean uploads folder - DELETE ALL FILES
-        upload_path = os.path.abspath(UPLOAD_FOLDER)
-        if os.path.exists(upload_path):
-            files_deleted = 0
-            for filename in os.listdir(upload_path):
-                file_path = os.path.join(upload_path, filename)
-                try:
-                    if os.path.isfile(file_path):
-                        os.remove(file_path)
-                        files_deleted += 1
-                        print(f"🗑️ Deleted old upload: {filename}")
-                except Exception as e:
-                    print(f"❌ Error deleting {filename}: {e}")
-            print(f"✅ Deleted {files_deleted} old upload files")
-        else:
-            print(f"📁 Upload folder not found: {upload_path}")
-        
-        # Clean vector database folder - DELETE ALL FILES
-        vector_path = os.path.abspath(VECTOR_DB_PATH)
-        if os.path.exists(vector_path):
-            files_deleted = 0
-            for filename in os.listdir(vector_path):
-                file_path = os.path.join(vector_path, filename)
-                try:
-                    if os.path.isfile(file_path):
-                        os.remove(file_path)
-                        files_deleted += 1
-                        print(f"🗑️ Deleted old vector db: {filename}")
-                except Exception as e:
-                    print(f"❌ Error deleting {filename}: {e}")
-            print(f"✅ Deleted {files_deleted} old vector db files")
-        else:
-            print(f"📁 Vector DB folder not found: {vector_path}")
-                    
-    except Exception as e:
-        print(f"❌ Cleanup error: {e}")
-
-
-def cleanup_temp_files():
-    """Clean up temporary files older than 1 hour"""
-    import time
-    try:
-        current_time = time.time()
-        
-        # Clean old uploads (older than 1 hour)
-        for file_path in glob.glob(os.path.join(UPLOAD_FOLDER, "*")):
-            if os.path.isfile(file_path):
-                file_age = current_time - os.path.getctime(file_path)
-                if file_age > 3600:  # 1 hour = 3600 seconds
-                    os.remove(file_path)
-                    print(f"Cleaned old file: {file_path}")
-                    
-        # Clean old vector db files (older than 1 hour)
-        for file_path in glob.glob(os.path.join(VECTOR_DB_PATH, "*")):
-            if os.path.isfile(file_path):
-                file_age = current_time - os.path.getctime(file_path)
-                if file_age > 3600:  # 1 hour = 3600 seconds
-                    os.remove(file_path)
-                    print(f"Cleaned old vector db: {file_path}")
-                    
-    except Exception as e:
-        print(f"Temp cleanup error: {e}")
 
 
 @app.route("/")
@@ -181,65 +107,12 @@ def logout():
     return redirect(url_for('login'))
 
 
-@app.route("/cleanup", methods=["POST"])
-@login_required
-def manual_cleanup():
-    """Manual cleanup endpoint"""
-    try:
-        cleanup_old_files()
-        return jsonify({"success": True, "message": "Cleanup completed"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/test-cleanup", methods=["GET"])
-@login_required
-def test_cleanup():
-    """Test cleanup function"""
-    try:
-        print("🧪 Testing cleanup function...")
-        cleanup_old_files()
-        return jsonify({"success": True, "message": "Test cleanup completed - check console logs"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
 @app.route("/upload", methods=["POST"])
 @login_required
 def upload():
-
     global vector_db, is_uploading, current_filename
 
     try:
-        # STEP 1: JAISE HI BUTTON CLICK HOGA - PEHLE OLD FILES DELETE KARO
-        print("🗑️ Button clicked! Deleting old files...")
-        
-        # uploads folder ki saari files delete karo
-        uploads_folder = "uploads"
-        if os.path.exists(uploads_folder):
-            for file_name in os.listdir(uploads_folder):
-                file_path = os.path.join(uploads_folder, file_name)
-                if os.path.isfile(file_path):
-                    try:
-                        os.remove(file_path)
-                        print(f"✅ Deleted: {file_name}")
-                    except Exception as e:
-                        print(f"❌ Could not delete {file_name}: {e}")
-        
-        # vectordb folder ki saari files delete karo
-        vectordb_folder = "vectordb"
-        if os.path.exists(vectordb_folder):
-            for file_name in os.listdir(vectordb_folder):
-                file_path = os.path.join(vectordb_folder, file_name)
-                if os.path.isfile(file_path):
-                    try:
-                        os.remove(file_path)
-                        print(f"✅ Deleted vector file: {file_name}")
-                    except Exception as e:
-                        print(f"❌ Could not delete vector file {file_name}: {e}")
-        
-        print("🎉 All old files deleted! Now processing new file...")
-        
         is_uploading = True
         
         file = request.files["file"]
@@ -248,19 +121,22 @@ def upload():
             is_uploading = False
             return jsonify({"error": "No file selected"}), 400
 
-        # Ab naya file save karo
         filename = file.filename
         current_filename = filename
-        path = os.path.join(UPLOAD_FOLDER, filename)
         
-        print(f"💾 Saving new file: {filename}")
-        file.save(path)
+        # Read file data into memory
+        file_data = file.read()
+        
+        # Store PDF in MongoDB
+        store_pdf(current_user.id, filename, file_data)
+        
+        print(f"💾 Stored file in MongoDB: {filename}")
 
-        # Process PDF
-        docs = load_pdf(path)
+        # Process PDF from bytes
+        docs = load_pdf_from_bytes(file_data, filename)
         chunks = split_docs(docs)
 
-        # Create vector database
+        # Create vector database in FAISS (in-memory)
         vector_db = create_vector_db(chunks, embeddings)
 
         # Analysis
@@ -290,7 +166,6 @@ def upload():
 @app.route("/ask", methods=["POST"])
 @login_required
 def ask():
-
     if is_uploading:
         return jsonify({
             "error": "Document is still uploading. Please wait..."
@@ -323,8 +198,5 @@ def ask():
 
 
 if __name__ == "__main__":
-    # Clean up old temporary files on startup
-    cleanup_temp_files()
-    
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=False)

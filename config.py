@@ -8,5 +8,5 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 MONGODB_URI = os.getenv("MONGODB_URI")
 SECRET_KEY = os.getenv("SECRET_KEY")
 
-UPLOAD_FOLDER = "uploads"
-VECTOR_DB_PATH = "vectordb"
+# Note: UPLOAD_FOLDER and VECTOR_DB_PATH are no longer needed
+# PDFs are stored in MongoDB, vectors are stored in FAISS (in-memory)
