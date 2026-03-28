@@ -1,22 +1,28 @@
 # Flask and web dependencies
-flask
-gunicorn
-flask-login
-bcrypt
-python-dotenv
-pymongo
+Flask==3.1.3
+gunicorn==25.3.0
+Flask-Login==0.6.3
+bcrypt==5.0.0
+python-dotenv==1.2.2
+pymongo==4.16.0
 
-# LangChain and AI dependencies
-langchain==0.2.16
-langchain-community==0.2.16
-langchain-text-splitters==0.2.4
-langchain-groq==0.1.9
-langchain-huggingface
+# LangChain (latest stable versions)
+langchain==1.2.13
+langchain-community==0.4.1
+langchain-core==1.2.23
+langchain-groq==1.1.2
+langchain-huggingface==1.2.1
+langchain-text-splitters==1.1.1
 
-# Vector database and document processing
-faiss-cpu
-pypdf
+# HuggingFace
+huggingface-hub==0.36.2
 
-# Note: PDFs stored in MongoDB (cloud storage)
-# Vectors stored in FAISS (in-memory for fast search)
-# Using HuggingFace API for embeddings (no local models downloaded)
+# Vector database
+faiss-cpu==1.13.2
+
+# PDF processing
+pypdf==6.9.2
+
+# Note: Using HuggingFaceEndpointEmbeddings for API-based embeddings
+# PDFs stored in MongoDB, vectors in FAISS (in-memory)
+# All versions pinned for stable deployment on Render

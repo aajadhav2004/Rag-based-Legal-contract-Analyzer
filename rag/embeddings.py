@@ -2,6 +2,7 @@ from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from config import HF_TOKEN
 
 def load_embeddings():
+    """Load HuggingFace embeddings using Inference API"""
     embeddings = HuggingFaceEndpointEmbeddings(
         model="sentence-transformers/all-MiniLM-L6-v2",
         huggingfacehub_api_token=HF_TOKEN

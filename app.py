@@ -159,7 +159,10 @@ def upload():
     
     except Exception as e:
         is_uploading = False
+        import traceback
+        error_details = traceback.format_exc()
         print(f"❌ Error: {e}")
+        print(f"Full traceback:\n{error_details}")
         return jsonify({"error": str(e)}), 500
 
 
